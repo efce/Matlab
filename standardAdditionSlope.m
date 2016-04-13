@@ -1,4 +1,4 @@
-function [ fres, correlation ] = slopeNew( DATACELL, peakLocation, options )
+function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, options )
 %%
 % DATACELL has four cell arrays:
 %	Y: MATRIX with registered signals in each column
