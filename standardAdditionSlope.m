@@ -9,6 +9,21 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 %	SENS: VECTOR with the INDEX (so 1:nrOfSens values) of sensitivity of each Y column (so the same
 %	number of columns as Y and one row)
 %
+% peakLocation is a scalar with rough estimate of the signal of interest
+%	maximum. It is expressed as a field number i.e. of single curve cosists
+%	of 100 data points peakLocation can be a number between 1 and 100.
+%
+% options is a structure, which may contain fields:
+% .average - boolean, true means that columns with the same concentration
+%			and sensitivity should be everaged
+% .smooth - boolean, true means that data should be smoothed before further
+%			processing
+% .forceSamePoints - boolean, true means that inflection points should only
+%			be calculated for the curve with highest concentration 
+%			and used for all (as opposed to calculating the
+%			inflection point for all curves independiently.
+%
+
 	try
 		options.average;
 	catch
