@@ -7,7 +7,8 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 %	CONC: VECTOR with values of concentration for each column of Y (so the same
 %	number of columns and one row)
 %	SENS: VECTOR with the INDEX (so 1:nrOfSens values) of sensitivity of each Y column (so the same
-%	number of columns as Y and one row)
+%	number of columns as Y and one row). There has to be minimum two
+%	different sensitivities for each concentration.
 %
 % peakLocation is a scalar with rough estimate of the signal of interest
 %	maximum. It is expressed as a field number i.e. of single curve cosists
@@ -195,7 +196,7 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 	prevNormalFit = [ NaN NaN ];
 	finalNormalFit = [ NaN NaN ];
 	%signal = smooth(signal,13,'sgolay',3);
-	%signal = smooth(signal,17,'sgolay',3);
+	signal = smooth(signal,17,'sgolay',3);
 	
 	%
 	% FITTING LEFT
