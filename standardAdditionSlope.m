@@ -137,45 +137,91 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 	crossAVG = zeros(size(normalFitAVG,2),size(normalFitAVG,2),2);
 	rpos = 1;
 	fres = [];
+	avOK = true;
+	rOK = true;
+	lOK = true;
 	for i=1:size(normalFitAVG,2)
 		for ii=1:size(normalFitAVG,2)
-			if ( i == ii )
+			% Check are sensitivities different enaugh
+			if ( i >= ii )
 				continue;
 			end
-			% MATRIX solution
-			crossL(i,ii,:) = pinv([normalFitL(2,i) -1; normalFitL(2,ii) -1]) * [-normalFitL(1,i);-normalFitL(1,ii)];
-			crossR(i,ii,:) = pinv([normalFitR(2,i) -1; normalFitR(2,ii) -1]) * [-normalFitR(1,i);-normalFitR(1,ii)];
-			crossAVG(i,ii,:) = pinv([normalFitAVG(2,i) -1; normalFitAVG(2,ii) -1]) * [-normalFitAVG(1,i);-normalFitAVG(1,ii)];;
-			plot([ crossR(i,ii,1) concSort(end) ], [ crossR(i,ii,1) concSort(end) ].*normalFitR(2,i) + normalFitR(1,i), 'r-');
-			plot([ crossL(i,ii,1) concSort(end) ], [ crossL(i,ii,1) concSort(end) ].*normalFitL(2,i) + normalFitL(1,i), 'b-');
-			plot([ crossAVG(i,ii,1) concSort(end) ], [ crossAVG(i,ii,1) concSort(end) ].*normalFitAVG(2,i) + normalFitAVG(1,i), 'g-');
-			if ( i > ii ) 
-				fresL(rpos) = -crossL(i,ii,1);
-				fresR(rpos) = -crossR(i,ii,1);
-				fresAVG(rpos) = -crossAVG(i,ii,1);
-				plot(crossL(i,ii,1),crossL(i,ii,2),'bx')
-				plot(crossR(i,ii,1),crossR(i,ii,2),'rx')
-				plot(crossAVG(i,ii,1),crossAVG(i,ii,2),'gx');
-				rpos = rpos+1;
+			if ( avOK )
+				prop = normalFitAVG(2,i) / normalFitAVG(2,ii);
+				if ( prop > 1.1 || prop < 0.9 )
+					% MATRIX solution of intersection points for each
+					% combination
+					crossAVG(i,ii,:) = pinv([normalFitAVG(2,i) -1; normalFitAVG(2,ii) -1]) * [-normalFitAVG(1,i);-normalFitAVG(1,ii)];
+					plot([ crossAVG(i,ii,1) concSort(end) ], [ crossAVG(i,ii,1) concSort(end) ].*normalFitAVG(2,i) + normalFitAVG(1,i), 'g-');
+					fresAVG(rpos) = -crossAVG(i,ii,1);
+					plot(crossAVG(i,ii,1),crossAVG(i,ii,2),'gx');
+				else
+					disp('Sensitivities are too similar for AVERAGE');
+					avOK = false;
+				end
 			end
+			
+			if ( lOK )
+				prop = normalFitL(2,i) / normalFitL(2,ii);
+				if ( prop > 1.1 || prop < 0.9 )
+					% MATRIX solution of intersection points for each
+					% combination
+					crossL(i,ii,:) = pinv([normalFitL(2,i) -1; normalFitL(2,ii) -1]) * [-normalFitL(1,i);-normalFitL(1,ii)];
+					plot([ crossL(i,ii,1) concSort(end) ], [ crossL(i,ii,1) concSort(end) ].*normalFitL(2,i) + normalFitL(1,i), 'b-');
+					fresL(rpos) = -crossL(i,ii,1);
+					plot(crossL(i,ii,1),crossL(i,ii,2),'bx');
+				else
+					disp('Sensitivities are too similar for LEFT');
+					lOK = false;
+				end
+			end
+			
+			if ( rOK )
+				prop = normalFitR(2,i) / normalFitR(2,ii);
+				if ( prop > 1.1 || prop < 0.9 )
+					% MATRIX solution of intersection points for each
+					% combination
+					crossR(i,ii,:) = pinv([normalFitR(2,i) -1; normalFitR(2,ii) -1]) * [-normalFitR(1,i);-normalFitR(1,ii)];
+					plot([ crossR(i,ii,1) concSort(end) ], [ crossR(i,ii,1) concSort(end) ].*normalFitR(2,i) + normalFitR(1,i), 'r-');
+					fresR(rpos) = -crossR(i,ii,1);
+					plot(crossR(i,ii,1),crossR(i,ii,2),'rx');
+				else
+					disp('Sensitivities are too similar for RIGHT');
+					rOK = false;
+				end
+			end
+			
+			rpos = rpos+1;
 		end
 	end
+
+	if ( lOK )
+		stdL = std(fresL);
+	else
+		stdL = NaN;
+	end
+	if ( rOK )
+		stdR = std(fresR);
+	else
+		stdR = NaN;
+	end
+	if ( avOK )
+		stdAVG = std(fresAVG);
+	else
+		stdAVG = NaN;
+	end
 	
-	stdL = std(fresL);
-	stdR = std(fresR);
-	stdAVG = std(fresAVG);
-	
-	if ( min(correlation.L) > 0.9  ...
+	if ( lOK && min(correlation.L) > 0.9  ...
 	&& ( stdL <= stdAVG || min(correlation.AVG) <= 0.9 ) ...
 	&& ( stdL <= stdR || min(correlation.R) <= 0.9 ) )
 		disp('Selecting left slope');
 		fres = fresL;
-	elseif ( min(correlation.R) > 0.9 ...
+	elseif ( rOK && min(correlation.R) > 0.9 ...
 	&& ( stdR <= stdAVG || min(correlation.AVG) <= 0.9 ) ...
 	&& ( stdR <= stdL || min(correlation.L) <= 0.9 ) )
 		disp('Selecting right slope');
 		fres = fresR;
-	elseif ( min(correlation.AVG) > 0.9 )
+	elseif ( avOK && min(correlation.AVG) > 0.9 )
 		disp('Selecting average slope');
 		fres = fresAVG;
 	else 
