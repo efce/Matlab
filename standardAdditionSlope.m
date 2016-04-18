@@ -25,6 +25,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 %			inflection point for all curves independiently.
 %
 
+	slopeDiffRequired = 0.03;
 	try
 		options.average;
 	catch
@@ -148,7 +149,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 			end
 			if ( avOK )
 				prop = normalFitAVG(2,i) / normalFitAVG(2,ii);
-				if ( prop > 1.1 || prop < 0.9 )
+				if ( prop > (1+slopeDiffRequired) || prop < (1-slopeDiffRequired) )
 					% MATRIX solution of intersection points for each
 					% combination
 					crossAVG(i,ii,:) = pinv([normalFitAVG(2,i) -1; normalFitAVG(2,ii) -1]) * [-normalFitAVG(1,i);-normalFitAVG(1,ii)];
@@ -156,6 +157,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 					fresAVG(rpos) = -crossAVG(i,ii,1);
 					plot(crossAVG(i,ii,1),crossAVG(i,ii,2),'gx');
 				else
+					disp (['Sens1: ' num2str(normalFitAVG(2,i)) '; Sens2: ' num2str(normalFitAVG(2,ii)) '; Sens1/Sens2:' num2str(normalFitAVG(2,i)/normalFitAVG(2,ii)) ]);
 					disp('Sensitivities are too similar for AVERAGE');
 					avOK = false;
 				end
@@ -163,7 +165,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 			
 			if ( lOK )
 				prop = normalFitL(2,i) / normalFitL(2,ii);
-				if ( prop > 1.1 || prop < 0.9 )
+				if ( prop > (1+slopeDiffRequired) || prop < (1-slopeDiffRequired) )
 					% MATRIX solution of intersection points for each
 					% combination
 					crossL(i,ii,:) = pinv([normalFitL(2,i) -1; normalFitL(2,ii) -1]) * [-normalFitL(1,i);-normalFitL(1,ii)];
@@ -171,6 +173,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 					fresL(rpos) = -crossL(i,ii,1);
 					plot(crossL(i,ii,1),crossL(i,ii,2),'bx');
 				else
+					disp (['Sens1: ' num2str(normalFitL(2,i)) '; Sens2: ' num2str(normalFitL(2,ii)) '; Sens1/Sens2:' num2str(normalFitL(2,i)/normalFitL(2,ii)) ]);
 					disp('Sensitivities are too similar for LEFT');
 					lOK = false;
 				end
@@ -178,7 +181,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 			
 			if ( rOK )
 				prop = normalFitR(2,i) / normalFitR(2,ii);
-				if ( prop > 1.1 || prop < 0.9 )
+				if ( prop > (1+slopeDiffRequired) || prop < (1-slopeDiffRequired) )
 					% MATRIX solution of intersection points for each
 					% combination
 					crossR(i,ii,:) = pinv([normalFitR(2,i) -1; normalFitR(2,ii) -1]) * [-normalFitR(1,i);-normalFitR(1,ii)];
@@ -186,6 +189,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 					fresR(rpos) = -crossR(i,ii,1);
 					plot(crossR(i,ii,1),crossR(i,ii,2),'rx');
 				else
+					disp (['Sens1: ' num2str(normalFitR(2,i)) '; Sens2: ' num2str(normalFitR(2,ii)) '; Sens1/Sens2:' num2str(normalFitR(2,i)/normalFitR(2,ii)) ]);
 					disp('Sensitivities are too similar for RIGHT');
 					rOK = false;
 				end
