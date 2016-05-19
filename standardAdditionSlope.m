@@ -25,7 +25,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 %			inflection point for all curves independiently.
 %
 
-	slopeDiffRequired = 0.03;
+	slopeDiffRequired = 0.01;
 	try
 		options.average;
 	catch
@@ -42,12 +42,6 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 		options.forceSamePoints;
 	catch
 		options.forceSamePoints = false;
-	end
-
-	try
-		options.slopeInfectionMethod;
-	catch
-		options.slopeInfectionMethod = 'clone';
 	end
 
 	if ( size(DATACELL.SENS,2) ~= size(DATACELL.Y,2) || size(DATACELL.CONC,2) ~= size(DATACELL.Y,2) )
@@ -98,9 +92,9 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 
 	for i=size(dataYSort,2):-1:1
 		if ( i == size(dataYSort,2) )
-			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, 'notClone');
+			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, false);
 		else
-			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, options.slopeInfectionMethod, fitRange(:,i+1));
+			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, options.forceSamePoints, fitRange(:,i+1));
 		end
 	end
 	
@@ -200,17 +194,17 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 	end
 
 	if ( lOK )
-		stdL = std(fresL);
+		stdL = std(fresL)
 	else
 		stdL = NaN;
 	end
 	if ( rOK )
-		stdR = std(fresR);
+		stdR = std(fresR)
 	else
 		stdR = NaN;
 	end
 	if ( avOK )
-		stdAVG = std(fresAVG);
+		stdAVG = std(fresAVG)
 	else
 		stdAVG = NaN;
 	end
@@ -237,7 +231,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 
 end
 
-function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(signal, peak, method, fitRange )
+function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(signal, peak, forceFitRange, fitRange )
 	fitSize = 5;
 	maxHit = 4;
 	hitCnt = 0;
@@ -253,7 +247,7 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 	%
 	% normal equation fit:
 	
-	if ( strcmp(method, 'clone') ) 
+	if ( forceFitRange ) 
 		fitRange;
 		[blackhole,pos] = max(isnan(fitRange));
 		fitrangeL = fitRange(1:pos-1);
@@ -365,6 +359,25 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 		end
 		fitRange = [ fitrangeL NaN fitrangeR ];
 	end %end catch
+	
+	%
+	% EXP
+	%
+	experimental = true;
+
+	if ( experimental )
+		p = polyfit( [ fitrangeL(1) fitrangeR(end) ]', signal([ fitrangeL(1) fitrangeR(end) ]),1);
+		levelPeak = signal - polyval(p,[ 1 : numel(signal) ])';
+		range2 = [ floor((fitrangeR(end)+fitrangeL(1))/2)-(fitrangeR(end)-fitrangeL(1)) ceil((fitrangeR(end)+fitrangeL(1))/2)+(fitrangeR(end)-fitrangeL(1)) ];
+		levelPeak = levelPeak - levelPeak(range2(1));
+		f = fit( [range2(1):range2(end)]', levelPeak([range2(1):range2(end)]), 'gauss1' );
+		%plot(f,[1:numel(signal)], levelPeak);
+		slopeL = f(fitrangeL(2)) - f(fitrangeL(1));
+		slopeR = f(fitrangeR(end)) - f(fitrangeR(end-1));
+	end
+	%
+	%range2
+	%
 
 	slopeAVGfitRange = (slopeL + -1*slopeR)/2;
 	
