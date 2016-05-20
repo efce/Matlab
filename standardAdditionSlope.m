@@ -41,7 +41,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 	try
 		options.forceSamePoints;
 	catch
-		options.forceSamePoints = false;
+		options.forceSamePoints = true;
 	end
 
 	if ( size(DATACELL.SENS,2) ~= size(DATACELL.Y,2) || size(DATACELL.CONC,2) ~= size(DATACELL.Y,2) )
@@ -366,12 +366,15 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 	experimental = true;
 
 	if ( experimental )
-		p = polyfit( [ fitrangeL(1) fitrangeR(end) ]', signal([ fitrangeL(1) fitrangeR(end) ]),1);
+		a=( signal(fitrangeR(end))-signal(fitrangeL(1)) )/( fitrangeR(end)-fitrangeL(1));
+		b=signal(fitrangeL(1)) - a*fitrangeL(1);
+		p = [ a b ];
+		%p = polyfit( [ fitrangeL(1) fitrangeR(end) ]', signal([ fitrangeL(1) fitrangeR(end) ]),1), pause
 		levelPeak = signal - polyval(p,[ 1 : numel(signal) ])';
-		range2 = [ floor((fitrangeR(end)+fitrangeL(1))/2)-(fitrangeR(end)-fitrangeL(1)) ceil((fitrangeR(end)+fitrangeL(1))/2)+(fitrangeR(end)-fitrangeL(1)) ];
-		levelPeak = levelPeak - levelPeak(range2(1));
-		f = fit( [range2(1):range2(end)]', levelPeak([range2(1):range2(end)]), 'gauss1' );
-		%plot(f,[1:numel(signal)], levelPeak);
+		range2 = [ floor((fitrangeR(end)+fitrangeL(1))/2)-ceil(1.2*(fitrangeR(end)-fitrangeL(1))) ceil((fitrangeR(end)+fitrangeL(1))/2)+ceil(1.2*(fitrangeR(end)-fitrangeL(1))) ];
+		%levelPeak = levelPeak - min(levelPeak(range2(1):range2(end)));
+		f = fit( [range2(1):range2(end)]', levelPeak([range2(1):range2(end)]), 'smoothingspline' );
+		%figure(99);plot(f,[1:numel(signal)], levelPeak);hold on; pause
 		slopeL = f(fitrangeL(2)) - f(fitrangeL(1));
 		slopeR = f(fitrangeR(end)) - f(fitrangeR(end-1));
 	end
