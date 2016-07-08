@@ -261,7 +261,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 	
 	disp(sprintf('mean: %0.6e', mean(fres)));
 	disp(sprintf('median: %0.6e ',median(fres)));
-	disp(sprintf('proponowany wynik: %0.6e ± %0.6e',mean(fres), (std(fres)/sqrt(numel(fres))*tinv(1-(.05/2),length(fres)-1))));
+	disp(sprintf('the result of calculation: %0.6e ± %0.6e',mean(fres), (std(fres)/sqrt(numel(fres))*tinv(1-(.05/2),length(fres)-1))));
 
 end
 
@@ -345,7 +345,7 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 % 			end
 		end
 		if ( isnan(finalNormalFit(2)) ) 
-			% nie udało się znaleźć dopasowania %
+			% fit failed %
 			disp('failed');
 		else
 			slopeL = finalNormalFit(2);
@@ -386,7 +386,7 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 % 			end
 		end
 		if ( isnan(finalNormalFit(2)) ) 
-			% nie udało się znaleźć dopasowania %
+			% fit failed %
 		else
 			slopeR = finalNormalFit(2);
 			fitrangeR = finalFitrange;
