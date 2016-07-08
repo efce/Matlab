@@ -137,7 +137,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 	lOK = true;
 	for i=1:size(normalFitAVG,2)
 		for ii=1:size(normalFitAVG,2)
-			% Check are sensitivities different enaugh
+			% Check if sensitivities are different enough
 			if ( i >= ii )
 				continue;
 			end
@@ -192,19 +192,52 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 			rpos = rpos+1;
 		end
 	end
-
+	toremove=[];
 	if ( lOK )
 		stdL = std(fresL)
+		% Try Three-sigma to see if result are aligned;
+		if ( length(fresL) >= 3 ) %only if there is three or more curves
+			mfresL = mean(fresL);
+			for si = 1:length(fresL)
+				if ( abs(fresL(i)-mfresL) >= 3*stdL ) %three-sigma
+					toremove = [ toremove i ];
+				end
+			end
+		end
+		fresL(toremove) = [];
+		stdL=std(fresL);	
 	else
 		stdL = NaN;
 	end
 	if ( rOK )
 		stdR = std(fresR)
+		% Try Three-sigma to see if result are aligned;
+		if ( length(fresR) >= 3 ) %only if there is three or more curves
+			mfresR = mean(fresR);
+			for si = 1:length(fresR)
+				if ( abs(fresR(i)-mfresR) >= 3*stdR ) %three-sigma
+					toremove = [ toremove i ];
+				end
+			end
+		end
+		fresR(toremove) = [];
+		stdR=std(fresR)	
 	else
 		stdR = NaN;
 	end
 	if ( avOK )
 		stdAVG = std(fresAVG)
+		% Try Three-sigma to see if result are aligned;
+		if ( length(fresAVG) >= 3 ) %only if there is three or more curves
+			mfresAVG = mean(fresAVG);
+			for si = 1:length(fresAVG)
+				if ( abs(fresAVG(i)-mfresAVG) >= 3*stdAVG ) %three-sigma
+					toremove = [ toremove i ];
+				end
+			end
+		end
+		fresAVG(toremove) = [];
+		stdAVG=std(fresAVG)	
 	else
 		stdAVG = NaN;
 	end
@@ -228,6 +261,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 	
 	disp(sprintf('mean: %0.6e', mean(fres)));
 	disp(sprintf('median: %0.6e ',median(fres)));
+	disp(sprintf('proponowany wynik: %0.6e ± %0.6e',mean(fres), (std(fres)/sqrt(numel(fres))*tinv(1-(.05/2),length(fres)-1))));
 
 end
 
@@ -363,7 +397,7 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 	%
 	% EXP
 	%
-	experimental = true;
+	experimental = false;
 
 	if ( experimental )
 		a=( signal(fitrangeR(end))-signal(fitrangeL(1)) )/( fitrangeR(end)-fitrangeL(1));
