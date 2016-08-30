@@ -132,9 +132,18 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 	crossAVG = zeros(size(normalFitAVG,2),size(normalFitAVG,2),2);
 	rpos = 1;
 	fres = [];
+	
 	avOK = true;
 	rOK = true;
 	lOK = true;
+	if ( any(isnan(slopeR)))
+		rOK=false;
+		avOK=false;
+	end
+	if ( any(isnan(slopeL)))
+		lOK=false;
+		avOK=false;
+	end
 	for i=1:size(normalFitAVG,2)
 		for ii=1:size(normalFitAVG,2)
 			% Check if sensitivities are different enough
@@ -397,9 +406,9 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 	%
 	% EXP
 	%
-	experimental = false;
+	experimental = 2;
 
-	if ( experimental )
+	if ( experimental == 1 )
 		a=( signal(fitrangeR(end))-signal(fitrangeL(1)) )/( fitrangeR(end)-fitrangeL(1));
 		b=signal(fitrangeL(1)) - a*fitrangeL(1);
 		p = [ a b ];
@@ -411,6 +420,36 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 		%figure(99);plot(f,[1:numel(signal)], levelPeak);hold on; pause
 		slopeL = f(fitrangeL(2)) - f(fitrangeL(1));
 		slopeR = f(fitrangeR(end)) - f(fitrangeR(end-1));
+	elseif ( experimental == 2 ) 
+		d1 = sgsdf(signal,2,1,0,0);
+		d2 = sgsdf(d1,2,1,0,0);
+		plot(signal,'k');hold on;plot(d1,'b'); hold on; plot(d2,'r')
+		vl=abs(d2(1));
+		pl=0;
+		vr=abs(d2(end));
+		pr=0;
+		fr = [ fitrangeL(1)-20 : fitrangeR(end)+20 ];
+		for i= fr;
+			if ( abs(d2(i)) < vl && d2(i)>d2(i-1) ) %signal is increasing 
+				vl=abs(d2(i));
+				pl=i;
+			elseif ( abs(d2(i)) < vr && d2(i)<d2(i-1) ) %signal is decreasing
+				vr = abs(d2(i));
+				pr = i;
+			end
+		end
+		
+		if ( pl ~= 0 ) 
+			slopeL = d1(pl);
+		else
+			slopeL = NaN;
+		end
+		if ( pr ~= 0 ) 
+			slopeR = d1(pr);
+		else 
+			slopeR = NaN;
+		end
+			
 	end
 	%
 	%range2
