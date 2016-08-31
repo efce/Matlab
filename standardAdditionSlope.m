@@ -406,7 +406,7 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 	%
 	% EXP
 	%
-	experimental = 2;
+	experimental = 1;
 
 	if ( experimental == 1 )
 		a=( signal(fitrangeR(end))-signal(fitrangeL(1)) )/( fitrangeR(end)-fitrangeL(1));
