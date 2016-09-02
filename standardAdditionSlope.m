@@ -1,4 +1,4 @@
-function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, options )
+function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope( DATACELL, peakLocation, options )
 %%
 % DATACELL has four cell arrays:
 %	Y: MATRIX with registered signals in each column
@@ -25,7 +25,9 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 %			inflection point for all curves independiently.
 %
 
-	slopeDiffRequired = 0.01;
+    correlationTreshhold = 0.8;
+    rowRemoveTresholdPercent = 0.3;
+	slopeDiffRequired = 0.05;
 	try
 		options.average;
 	catch
@@ -125,7 +127,11 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 		correlation.R(s) = tmp(2,1);
 		tmp = corr( [(concList(:,s) .*normalFitAVG(2,s) + normalFitAVG(1,s)), slopeAVG(1,list)'] );
 		correlation.AVG(s) = tmp(2,1);
-	end
+    end
+    
+    calibration.L = slopeL(1,:);
+    calibration.R = slopeR(1,:);
+    calibration.AVG = slopeAVG(1,:);
 	
 	crossL = zeros(size(normalFitL,2),size(normalFitL,2),2);
 	crossR = zeros(size(normalFitR,2),size(normalFitR,2),2);
@@ -143,11 +149,15 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 	if ( any(isnan(slopeL)))
 		lOK=false;
 		avOK=false;
-	end
+    end
+    
 	for i=1:size(normalFitAVG,2)
 		for ii=1:size(normalFitAVG,2)
 			% Check if sensitivities are different enough
 			if ( i >= ii )
+                crossAVG(i,ii,1) = NaN;
+                crossR(i,ii,1) = NaN;
+                crossL(i,ii,1) = NaN;
 				continue;
 			end
 			if ( avOK )
@@ -158,13 +168,13 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 					crossAVG(i,ii,:) = pinv([normalFitAVG(2,i) -1; normalFitAVG(2,ii) -1]) * [-normalFitAVG(1,i);-normalFitAVG(1,ii)];
 					plot([ crossAVG(i,ii,1) concSort(end) ], [ crossAVG(i,ii,1) concSort(end) ].*normalFitAVG(2,i) + normalFitAVG(1,i), 'g-');
 					fresAVG(rpos) = -crossAVG(i,ii,1);
-					plot(crossAVG(i,ii,1),crossAVG(i,ii,2),'gx');
+					plot(crossAVG(i,ii,1),crossAVG(i,ii,2),'gx','MarkerSize',20);
 				else
 					disp (['Sens1: ' num2str(normalFitAVG(2,i)) '; Sens2: ' num2str(normalFitAVG(2,ii)) '; Sens1/Sens2:' num2str(normalFitAVG(2,i)/normalFitAVG(2,ii)) ]);
 					disp('Sensitivities are too similar for AVERAGE');
 					avOK = false;
 				end
-			end
+            end
 			
 			if ( lOK )
 				prop = normalFitL(2,i) / normalFitL(2,ii);
@@ -174,7 +184,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 					crossL(i,ii,:) = pinv([normalFitL(2,i) -1; normalFitL(2,ii) -1]) * [-normalFitL(1,i);-normalFitL(1,ii)];
 					plot([ crossL(i,ii,1) concSort(end) ], [ crossL(i,ii,1) concSort(end) ].*normalFitL(2,i) + normalFitL(1,i), 'b-');
 					fresL(rpos) = -crossL(i,ii,1);
-					plot(crossL(i,ii,1),crossL(i,ii,2),'bx');
+					plot(crossL(i,ii,1),crossL(i,ii,2),'bx','MarkerSize',20);
 				else
 					disp (['Sens1: ' num2str(normalFitL(2,i)) '; Sens2: ' num2str(normalFitL(2,ii)) '; Sens1/Sens2:' num2str(normalFitL(2,i)/normalFitL(2,ii)) ]);
 					disp('Sensitivities are too similar for LEFT');
@@ -190,7 +200,7 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 					crossR(i,ii,:) = pinv([normalFitR(2,i) -1; normalFitR(2,ii) -1]) * [-normalFitR(1,i);-normalFitR(1,ii)];
 					plot([ crossR(i,ii,1) concSort(end) ], [ crossR(i,ii,1) concSort(end) ].*normalFitR(2,i) + normalFitR(1,i), 'r-');
 					fresR(rpos) = -crossR(i,ii,1);
-					plot(crossR(i,ii,1),crossR(i,ii,2),'rx');
+					plot(crossR(i,ii,1),crossR(i,ii,2),'rx','MarkerSize',20);
 				else
 					disp (['Sens1: ' num2str(normalFitR(2,i)) '; Sens2: ' num2str(normalFitR(2,ii)) '; Sens1/Sens2:' num2str(normalFitR(2,i)/normalFitR(2,ii)) ]);
 					disp('Sensitivities are too similar for RIGHT');
@@ -200,68 +210,55 @@ function [ fres, correlation ] = standardAdditionSlope( DATACELL, peakLocation, 
 			
 			rpos = rpos+1;
 		end
-	end
-	toremove=[];
-	if ( lOK )
-		stdL = std(fresL)
-		% Try Three-sigma to see if result are aligned;
-		if ( length(fresL) >= 3 ) %only if there is three or more curves
-			mfresL = mean(fresL);
-			for si = 1:length(fresL)
-				if ( abs(fresL(i)-mfresL) >= 3*stdL ) %three-sigma
-					toremove = [ toremove i ];
-				end
-			end
-		end
-		fresL(toremove) = [];
-		stdL=std(fresL);	
-	else
-		stdL = NaN;
-	end
-	if ( rOK )
-		stdR = std(fresR)
-		% Try Three-sigma to see if result are aligned;
-		if ( length(fresR) >= 3 ) %only if there is three or more curves
-			mfresR = mean(fresR);
-			for si = 1:length(fresR)
-				if ( abs(fresR(i)-mfresR) >= 3*stdR ) %three-sigma
-					toremove = [ toremove i ];
-				end
-			end
-		end
-		fresR(toremove) = [];
-		stdR=std(fresR)	
-	else
-		stdR = NaN;
-	end
-	if ( avOK )
-		stdAVG = std(fresAVG)
-		% Try Three-sigma to see if result are aligned;
-		if ( length(fresAVG) >= 3 ) %only if there is three or more curves
-			mfresAVG = mean(fresAVG);
-			for si = 1:length(fresAVG)
-				if ( abs(fresAVG(i)-mfresAVG) >= 3*stdAVG ) %three-sigma
-					toremove = [ toremove i ];
-				end
-			end
-		end
-		fresAVG(toremove) = [];
-		stdAVG=std(fresAVG)	
-	else
-		stdAVG = NaN;
-	end
+    end
+    
+    [ crossAVG, removedORDER ] = minimizeCV(squeeze(crossAVG(:,:,1)), 3, rowRemoveTresholdPercent);
+    for i=1:length(removedORDER)
+        correlation.AVG(removedORDER(i)) = [];
+    end
+    fresAVG = -crossAVG(logical(triu(ones(size(crossAVG)),1)));
+    stdAVG = std(fresAVG)
+    
+    [ crossR, removedORDER ] = minimizeCV(squeeze(crossR(:,:,1)), 3, rowRemoveTresholdPercent);
+    for i=1:length(removedORDER)
+        correlation.R(removedORDER(i)) = [];
+    end
+    fresR = -crossR(logical(triu(ones(size(crossR)),1)));
+    stdR = std(fresR)
+    
+     [ crossL, removedORDER ] = minimizeCV(squeeze(crossL(:,:,1)), 3, rowRemoveTresholdPercent);
+    for i=1:length(removedORDER)
+        correlation.L(removedORDER(i)) = [];
+    end
+    fresL = -crossL(logical(triu(ones(size(crossL)),1)));
+    stdL = std(fresL)
+    
+    disp('Corelations Left:')
+    for i=1:size(correlation.L,2)
+        disp(correlation.L(i));
+    end
+    disp('===============')
+    disp('Corelations Right:')
+    for i=1:size(correlation.R,2)
+        disp(correlation.R(i));
+    end
+    disp('===============')
+    disp('Corelations AVG:')
+    for i=1:size(correlation.AVG,2)
+        disp(correlation.AVG(i));
+    end
 	
-	if ( lOK && min(correlation.L) > 0.9  ...
-	&& ( isnan(stdAVG) || stdL <= stdAVG || min(correlation.AVG) <= 0.9 ) ...
-	&& ( isnan(stdR) || stdL <= stdR || min(correlation.R) <= 0.9 ) )
+	if ( lOK && min(correlation.L) > correlationTreshhold  ...
+	&& ( isnan(stdAVG) || stdL <= stdAVG || min(correlation.AVG) <= correlationTreshhold ) ...
+	&& ( isnan(stdR) || stdL <= stdR || min(correlation.R) <= correlationTreshhold ) )
 		disp('Selecting left slope');
 		fres = fresL;
-	elseif ( rOK && min(correlation.R) > 0.9 ...
-	&& ( isnan(stdAVG) || stdR <= stdAVG || min(correlation.AVG) <= 0.9 ) ...
-	&& ( isnan(stdL) || stdR <= stdL || min(correlation.L) <= 0.9 ) )
+	elseif ( rOK && min(correlation.R) > correlationTreshhold ...
+	&& ( isnan(stdAVG) || stdR <= stdAVG || min(correlation.AVG) <= correlationTreshhold ) ...
+	&& ( isnan(stdL) || stdR <= stdL || min(correlation.L) <= correlationTreshhold ) )
 		disp('Selecting right slope');
 		fres = fresR;
-	elseif ( avOK && min(correlation.AVG) > 0.9 )
+	elseif ( avOK && min(correlation.AVG) > correlationTreshhold )
 		disp('Selecting average slope');
 		fres = fresAVG;
 	else 
@@ -464,3 +461,44 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 	end
 	
 end
+
+function [ matrixNANDIAG, removedORDER ] = minimizeCV( matrixNANDIAG, minEntities, minCVchange)
+
+    removedORDER = [];
+    while ( size(matrixNANDIAG,1) > minEntities )
+        inrow = inrows(matrixNANDIAG);
+        oldstdrows = std(inrow');
+        oldmeancvtotal = std(inrow(:)) / abs(mean(mean(inrow)));
+        [mval, mpos]=max(oldstdrows);
+        newmatrixNANDIAG = matrixNANDIAG;
+        newmatrixNANDIAG(:,mpos) = [];
+        newmatrixNANDIAG(mpos,:) = [];
+        newinrow = inrows(newmatrixNANDIAG);
+        newstd = std(newinrow(:));
+        newmeancvtotal = newstd / abs(mean(mean(newinrow)));
+        %(oldmeancvtotal-newmeancvtotal)
+        if ( (oldmeancvtotal-newmeancvtotal) > minCVchange )
+            matrixNANDIAG = newmatrixNANDIAG;
+            removedORDER = [ removedORDER mpos ];
+        else
+            break;
+        end
+    end
+end
+
+function inrow = inrows(mat)
+    inrow = zeros(size(mat,1), size(mat,1)-1);
+    pos = ones(size(mat,1) , 1);
+    for i=1:size(mat,1)
+        for ii=1:size(mat,1)
+            if ( ~isnan(mat(i,ii)) )
+                inrow(i,pos(i)) = mat(i,ii);
+                inrow(ii,pos(ii)) = mat(i,ii);
+                pos(i) = pos(i)+1;
+                pos(ii) = pos(ii)+1;
+            end
+        end
+    end
+end
+                    
+            
