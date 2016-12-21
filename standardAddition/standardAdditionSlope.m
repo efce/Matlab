@@ -132,8 +132,8 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
 
     % Very important step -- find the slope of each peak in inflection point. 
     % By default it reuses the point where the slope was taken from the peak
-    % with highest concentration -- if the location of the peak 
-    % moves with concetration please use:
+    % with the highest concentration -- if the location of the peak 
+    % changes in subsequent data please use:
     % options.forceSamePoints = false;
     % Variables may end with R, L or AVG, which means they deal with
     % rigth, left or average slope in inflection point respectivly.
@@ -175,9 +175,9 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
 		correlation.AVG(s) = tmp(2,1);
     end
     
-    calibration.L = slopeL(1,:);
-    calibration.R = slopeR(1,:);
-    calibration.AVG = slopeAVG(1,:);
+    calibration.L = slopeL(1,:)
+    calibration.R = slopeR(1,:)
+    calibration.AVG = slopeAVG(1,:)
 	
     % Generate initial matrix of intercepts
     %======================================
