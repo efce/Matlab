@@ -41,8 +41,8 @@ end;
 %xlabel('Numer punktu');
 
 
-figure;
-plot(bufo(:,2:n),'r');
+% figure;
+% plot(bufo(:,2:n),'r');
 
 
 % bkg=y1;
