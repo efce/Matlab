@@ -1,14 +1,23 @@
-src = prepareStructFromRawData( CdASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+src = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+range = [ 40:155];
+peak = [ 25:90 ];
+abc_degree =1;
+abc_looptimes = 20;
+% 
+% src = prepareStructFromRawData( CdASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+% range = [ 1:90];
+% peak = [ 30:50 ];
+% abc_degree =4;
+% abc_looptimes = 20;
 
-range = [ 1:130];
-peak = [ 21:71 ];
 
 nrofsens= length(unique(src.SENS));
 clear s;
 for i=1:nrofsens;
     s(:,i) = (src.SENS == i);
 end
-[ bkg, res_bezbkg ] = bkgautomatic([ [1:length(range)]' src.Y(range,:)*-1], 3,20);
+
+[ bkg, res_bezbkg ] = bkgautomatic([ [1:length(range)]' src.Y(range,:)*-1], abc_degree,abc_looptimes);
 res_bezbkg = res_bezbkg * -1;
 res_bezbkg = res_bezbkg(:,2:end);
 plot(res_bezbkg)
@@ -25,3 +34,4 @@ for i=1:nrofsens
     res_s_r(i) = sqrt( (1/(n-2)) * sum( (res_dokals - (res_linfit(1,i)*concs+res_linfit(2,i)) ).^2 ) );
     res_s_x0(i) = (res_s_r(i)/res_linfit(2,i)) * sqrt( 1 + 1/n + (res_dokals(1)-mean(res_dokals))^2 / (res_linfit(2,i)^2*sum( (concs-mean(concs)).^2 )));
 end
+res_finval(4)
