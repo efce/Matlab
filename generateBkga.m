@@ -1,4 +1,11 @@
-src = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+src = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 10, [ 20 23 26 29 ], 'dpasv');
+bkgstruct = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,1), [ 0 ], 40, 10, [ 20 23 26 29 ], 'dpasv');
+for i=1:4:16
+   src.Y(:,i) =  src.Y(:,i) - bkgstruct.Y(:,1);
+   src.Y(:,i+1) =  src.Y(:,i+1) - bkgstruct.Y(:,2);
+   src.Y(:,i+2) =  src.Y(:,i+2) - bkgstruct.Y(:,3);
+   src.Y(:,i+3) =  src.Y(:,i+3) - bkgstruct.Y(:,4);
+end
 %== res=48.8283; ci=2.1873; r2=0.99251
 % range = [ 20:165];
 % peak = [ 70:120 ];
@@ -12,7 +19,7 @@ src = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ],
 %== res=44.5845; ci=1.457; r2=0.9966
 range = [ 30:170];
 peak = [ 70:120 ];
-abc_degree =3;
+abc_degree =1;
 abc_looptimes = 100;
 
 
@@ -81,7 +88,12 @@ for i=1:nrofsens
 %     res_s_r(i) = sqrt( (1/(n-2) ) * sum( (res_dokals - (slope*concs + intercept) ).^2 ) );
 %     res_s_x0(i) = (res_s_r(i)/intercept) * sqrt( 1 + 1/n + (res_dokals(1)-mean(res_dokals))^2 / (intercept^2*sum( (concs-mean(concs)).^2 )));
 end
-disp([ 'Wynik: ' num2str(res_finval(1))]);
-disp(['Przeidzal ufnosci: ' num2str(res_Sx0(1)*tinv(1-0.05/2,n-1)/sqrt(n)) ])
-disp(['R^2: ' num2str(res_gd_{1}.rsquare) ])
-
+for i=1:4
+    disp([ 'Wynik #' num2str(i) ': ' num2str(res_finval(i))]);
+    disp(['Przeidzal ufnosci #' num2str(i) ': ' num2str(res_Sx0(i)*tinv(1-0.05/2,n-1)/sqrt(n)) ])
+    disp(['R^2 #' num2str(i) ': ' num2str(res_gd_{i}.rsquare) ])
+end
+subplot(221); plot(res_bezbkg(:,1:4:end));
+subplot(222); plot(res_bezbkg(:,2:4:end));
+subplot(223); plot(res_bezbkg(:,3:4:end));
+subplot(224); plot(res_bezbkg(:,4:4:end));
