@@ -12,7 +12,7 @@ function [ res ] = setTpTw( sig, realms, tp, tw, type)
     end
 
     for (i=1:realms:size(sig,1)-realms) 
-        tres( ((i+realms-1)/realms) ) = sum(sig(i+tw+1:i+tw+tp))/tp;
+        tres( ((i+realms-1)/realms) ) = sum(sig(i+tw:i+tw+tp-1))/tp;
     end;
 
     if (strcmp(type,'sc'))

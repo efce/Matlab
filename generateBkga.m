@@ -1,4 +1,4 @@
-src = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 10, [ 20 23 26 29 ], 'dpasv');
+src = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 10, [ 30 23 26 29 ], 'dpasv');
 bkgstruct = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,1), [ 0 ], 40, 10, [ 20 23 26 29 ], 'dpasv');
 for i=1:4:16
    src.Y(:,i) =  src.Y(:,i) - bkgstruct.Y(:,1);
