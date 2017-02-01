@@ -1,11 +1,11 @@
-src = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 10, [ 30 23 26 29 ], 'dpasv');
-bkgstruct = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,1), [ 0 ], 40, 10, [ 20 23 26 29 ], 'dpasv');
-for i=1:4:16
-   src.Y(:,i) =  src.Y(:,i) - bkgstruct.Y(:,1);
-   src.Y(:,i+1) =  src.Y(:,i+1) - bkgstruct.Y(:,2);
-   src.Y(:,i+2) =  src.Y(:,i+2) - bkgstruct.Y(:,3);
-   src.Y(:,i+3) =  src.Y(:,i+3) - bkgstruct.Y(:,4);
-end
+% src = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+% bkgstruct = prepareStructFromRawData( PbASV_od_0ppb_do_60ppb(:,1), [ 0 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+% for i=1:4:16
+%    src.Y(:,i) =  src.Y(:,i) - bkgstruct.Y(:,1);
+%    src.Y(:,i+1) =  src.Y(:,i+1) - bkgstruct.Y(:,2);
+%    src.Y(:,i+2) =  src.Y(:,i+2) - bkgstruct.Y(:,3);
+%    src.Y(:,i+3) =  src.Y(:,i+3) - bkgstruct.Y(:,4);
+% end
 %== res=48.8283; ci=2.1873; r2=0.99251
 % range = [ 20:165];
 % peak = [ 70:120 ];
@@ -16,42 +16,56 @@ end
 % peak = [ 70:120 ];
 % abc_degree =1;
 % abc_looptimes = 20;
-%== res=44.5845; ci=1.457; r2=0.9966
-range = [ 30:170];
-peak = [ 70:120 ];
-abc_degree =1;
-abc_looptimes = 100;
+%== res=35.8325; ci=0.9434; r2=0.99856
+% range = [ 30:170];
+% peak = [ 70:120 ];
+% abc_degree =1;
+% abc_looptimes = 100;
 
-
-%src = prepareStructFromRawData( Tl_120s_vavg_(:,4:8), [ 0 .10 .20 .30 .40 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+% 
+src = prepareStructFromRawData( Tl_120s_vavg_(:,4:8), [ 0 .10 .20 .30 .40 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+% bkgstruct = prepareStructFromRawData( Tl_120s_vavg_(:,1), [ 0 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+% for i=1:4:16
+%    src.Y(:,i) =  src.Y(:,i) - bkgstruct.Y(:,1);
+%    src.Y(:,i+1) =  src.Y(:,i+1) - bkgstruct.Y(:,2);
+%    src.Y(:,i+2) =  src.Y(:,i+2) - bkgstruct.Y(:,3);
+%    src.Y(:,i+3) =  src.Y(:,i+3) - bkgstruct.Y(:,4);
+% end
 %== res=0.32828; ci=0.019698; r2=0.99111
 % range = [ 50:150]; 
 % peak = [ 80:120 ];
 % abc_degree =2;
 % abc_looptimes = 20;
 %== res=0.34926; ci=0.019769; r2=0.99099
-% range = [ 35:160];
+range = [ 35:160];
+peak = [ 80:120 ];
+abc_degree =3;
+abc_looptimes = 20;
+%== res= 0.28192; ci=0.013132; r2=0.99596
+% range = [ 35:155];
 % peak = [ 80:120 ];
-% abc_degree =3;
-% abc_looptimes = 20;
-%== res=0.35224; ci=0.020759; r2=0.99009
-% range = [ 30:160];
-% peak = [ 80:120 ];
-% abc_degree =3;
-% abc_looptimes = 20;
+% abc_degree =2;
+% abc_looptimes = 100;
 
 
-%src = prepareStructFromRawData( CdASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+% src = prepareStructFromRawData( CdASV_od_0ppb_do_60ppb(:,4:end), [ 0 10 20 30 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+% bkgstruct = prepareStructFromRawData( CdASV_od_0ppb_do_60ppb(:,1), [ 0 ], 40, 3, [ 20 23 26 29 ], 'dpasv');
+% for i=1:4:16
+%    src.Y(:,i) =  src.Y(:,i) - bkgstruct.Y(:,1);
+%    src.Y(:,i+1) =  src.Y(:,i+1) - bkgstruct.Y(:,2);
+%    src.Y(:,i+2) =  src.Y(:,i+2) - bkgstruct.Y(:,3);
+%    src.Y(:,i+3) =  src.Y(:,i+3) - bkgstruct.Y(:,4);
+% end
 %== res=31.9736; ci=0.53123; r2=0.99953
 % range = [ 10:90];
 % peak = [ 30:55 ];
 % abc_degree =4;
 % abc_looptimes = 20;
-%== res=38.4869; ci=0.63103; r2=0.99935
+%== res=31.0435; ci=1.3388; r2=0.99691
 % range = [ 10:70];
 % peak = [ 30:55 ];
-% abc_degree = 3;
-% abc_looptimes = 20;
+% abc_degree = 2;
+% abc_looptimes = 100;
 
 
 nrofsens= length(unique(src.SENS));
