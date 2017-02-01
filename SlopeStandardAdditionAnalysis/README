@@ -1,0 +1,13 @@
+Novel method of standard addition signal analysis for voltammetry 
+Supplementary Informations
+
+
+In this repositry, you will find all the data and MATLAB procedures used in the publication:
+	- prepareStructFromRawData.m: generates the data structure for user inputs it makes use of the other file. Matrix used as data recorded from non-averaged measurements should have measurements in columns, it is important to remember that concentration vector has to describe every column in data matrix.
+	- setTpTw.m: this function is used extracts proper voltmmograms from non-averaged data, it can be used by its own, however its main use is by prepareStructFromRawData.m.
+	- SlopeStandardAdditionAnalysis.m: SSAA -- the function used for analysis, it includes help and is commented within file.
+	- ABC.m: Automatic Background Correction algorith, used in the publication, developed by Łukasz Górki.
+	- fitPoly1.m: function used to obtain calibration curves, with usefull statistics.
+	- calcRegularStandardAddition.m: Script used in calculation for regular calibrations, this file requires to remove some comments to work, however, it should be self-explonatory.
+	- *.mat: MATLAB format data files, with experimental signals for Pb(II), Cd(II) and Tl(I) measurements.
+	- *.csv: Comma Separated Value file, with the same data as in .mat files
