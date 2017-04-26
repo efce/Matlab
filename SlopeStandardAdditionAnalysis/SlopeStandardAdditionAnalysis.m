@@ -1,4 +1,4 @@
-function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAnalysis(DATACELL, peakLocation, options)
+function [ fres, correlation, calibration, fitRange, calibrationLines ] = SlopeStandardAdditionAnalysis(DATACELL, peakLocation, options)
 %
 % SlopeStandardAdditionAnalysis(DATACELL, peakLocation, options) is a function which tries
 % to perform standard addition analysis using peak slope at the inflection points
@@ -28,7 +28,7 @@ function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAna
 %				be calculated for the curve with highest concentration 
 %				and used for all (as opposed to calculating the
 %				inflection point for all curves independiently.
-%
+
 % Copyright (c) 2016, Filip Ciepiela <filip.ciepiela@agh.edu.pl> 
 % All rights reserved.
 %
@@ -57,6 +57,7 @@ function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAna
 
 % Check input and set some default values (this may be tweaked)
 %==============================================================
+    close all;
     correlationTreshhold = 0.8;
     rowRemoveTresholdPercent = 0.3;
 	slopeDiffRequired = 0.05;
@@ -115,6 +116,7 @@ function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAna
 	sensSort = sens(1,sortOrder);
 	dataYSort = zeros(size(dataY));
 	dataYSort(:,:) = dataY(:,sortOrder);
+    sensSort(:,:) = sens(1,sortOrder);
 
 	if ( options.smooth )
         % smooth is required
@@ -133,17 +135,19 @@ function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAna
     % rigth, left or average slope in inflection point respectivly.
     % getSlopeInInflection is included in this file.
     %================================================================
+    figure('Name','Plots');
+    lineColors = hsv(length(unique(sens)));
 	for i=size(dataYSort,2):-1:1
 		if ( i == size(dataYSort,2) )
-			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, false);
+			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, false, 0, lineColors(:,sensSort(i)));
 		else
-			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, options.forceSamePoints, fitRange(:,i+1));
+			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, options.forceSamePoints, fitRange(:,i+1), lineColors(:,sensSort(i)));
 		end
 	end
 	
 	% It uses Normal Equation to find the optimal fit of calibration plot.
 	%=====================================================================
-	figure;
+	figure('Name', 'Fits');
 	hold on;
 	icons = [ 'o' '+' '*' 's' 'd' 'v' '^' '<' '>' 'p' 'h' ];
 	if ( length(unique(sensSort)) > length(icons) ) 
@@ -169,9 +173,9 @@ function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAna
 		correlation.AVG(s) = tmp(2,1);
 	end
     
-    calibration.L = slopeL(1,:)
-    calibration.R = slopeR(1,:)
-    calibration.AVG = slopeAVG(1,:)
+    calibration.L = slopeL(1,:);
+    calibration.R = slopeR(1,:);
+    calibration.AVG = slopeAVG(1,:);
 	
     % Generate initial matrix of intercepts
     %======================================
@@ -222,7 +226,7 @@ function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAna
 					disp (['Sens1: ' num2str(normalFitAVG(2,i)) '; Sens2: ' num2str(normalFitAVG(2,ii)) '; Sens1/Sens2:' num2str(normalFitAVG(2,i)/normalFitAVG(2,ii)) ]);
 					disp('Sensitivities are too similar for AVERAGE');
 					avOK = false;
-				end
+                end
             end
 			
             % The same as above, but for L
@@ -238,7 +242,7 @@ function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAna
 					disp (['Sens1: ' num2str(normalFitL(2,i)) '; Sens2: ' num2str(normalFitL(2,ii)) '; Sens1/Sens2:' num2str(normalFitL(2,i)/normalFitL(2,ii)) ]);
 					disp('Sensitivities are too similar for LEFT');
 					lOK = false;
-				end
+                end
             end
 			
             % The same as above but for R
@@ -254,12 +258,15 @@ function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAna
 					disp (['Sens1: ' num2str(normalFitR(2,i)) '; Sens2: ' num2str(normalFitR(2,ii)) '; Sens1/Sens2:' num2str(normalFitR(2,i)/normalFitR(2,ii)) ]);
 					disp('Sensitivities are too similar for RIGHT');
 					rOK = false;
-				end
-			end
-			
+                end
+            end
 			rpos = rpos+1;
 		end
     end
+    
+    calibrationLines.AVG = normalFitAVG;
+    calibrationLines.L = normalFitL;
+    calibrationLines.R = normalFitR;
     
     % Here, is a little trick, to remove the intersection points
     % which are too far from average. It is done by the means of
@@ -303,7 +310,7 @@ function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAna
         disp(correlation.AVG(i));
     end
 	
-    % Here it selects, if it possible to offer the final result, for which
+    % Here it selects, if it is possible to offer the final result, for which
     % set of data, the result is the best (left, right or average)
     %=====================================================================
 	if ( lOK && min(correlation.L) > correlationTreshhold  ...
@@ -328,12 +335,12 @@ function [ fres, correlation, calibration, fitRange ] = SlopeStandardAdditionAna
 
 end
 
-function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(signal, peak, forceFitRange, fitRange )
+function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(signal, peak, forceFitRange, fitRange, lineColor )
 % I find this as one of the most important steps, I has gone trou many
 % iterations, so the code is a bit of mixture of different ideas.
 % Some tweakalbe setting:
 %======================================================================
-	fitSize = 5; %How many points should be fitted to get slope%
+	fitSize = 7; %How many points should be fitted to get slope%
 	maxHit = 4;  %How many times the slope has to change to call it inflection point%
 	verbose = true; %Draw some additional plots%
     
@@ -525,9 +532,9 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 	slopeAVGfitRange = (slopeL - slopeR)/2;
 	
 	if ( verbose )
-		plot(signal); hold on;
-		plot(fitrangeL,signal(fitrangeL),'*b');
-		plot(fitrangeR,signal(fitrangeR),'*g');
+		plot(signal,'Color', lineColor); hold on;
+		plot(fitrangeL,signal(fitrangeL),'*b', 'MarkerSize', 2);
+		plot(fitrangeR,signal(fitrangeR),'*r', 'MarkerSize', 2);
 	end
 	
 end
