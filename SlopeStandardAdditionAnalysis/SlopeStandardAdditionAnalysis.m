@@ -1,4 +1,4 @@
-function [ fres, correlation, calibration, fitRange, calibrationLines ] = SlopeStandardAdditionAnalysis(DATACELL, peakLocation, options)
+function [ fres, correlation, calibration, fitRange, regressionEquations ] = SlopeStandardAdditionAnalysis(DATACELL, peakLocation, options)
 %
 % SlopeStandardAdditionAnalysis(DATACELL, peakLocation, options) is a function which tries
 % to perform standard addition analysis using peak slope at the inflection points
@@ -220,6 +220,7 @@ function [ fres, correlation, calibration, fitRange, calibrationLines ] = SlopeS
                     %==========================================================
 					crossAVG(i,ii,:) = pinv([normalFitAVG(2,i) -1; normalFitAVG(2,ii) -1]) * [-normalFitAVG(1,i);-normalFitAVG(1,ii)];
 					plot([ crossAVG(i,ii,1) concSort(end) ], [ crossAVG(i,ii,1) concSort(end) ].*normalFitAVG(2,i) + normalFitAVG(1,i), 'g-');
+                    plot([ crossAVG(i,ii,1) concSort(end) ], [ crossAVG(i,ii,1) concSort(end) ].*normalFitAVG(2,ii) + normalFitAVG(1,ii), 'g-');
 					fresAVG(rpos) = -crossAVG(i,ii,1);
 					plot(crossAVG(i,ii,1),crossAVG(i,ii,2),'gx','MarkerSize',20);
 				else
@@ -227,7 +228,9 @@ function [ fres, correlation, calibration, fitRange, calibrationLines ] = SlopeS
 					disp('Sensitivities are too similar for AVERAGE');
 					avOK = false;
                 end
+                
             end
+
 			
             % The same as above, but for L
             %=============================
@@ -236,6 +239,7 @@ function [ fres, correlation, calibration, fitRange, calibrationLines ] = SlopeS
 				if ( prop > (1+slopeDiffRequired) || prop < (1-slopeDiffRequired) )
 					crossL(i,ii,:) = pinv([normalFitL(2,i) -1; normalFitL(2,ii) -1]) * [-normalFitL(1,i);-normalFitL(1,ii)];
 					plot([ crossL(i,ii,1) concSort(end) ], [ crossL(i,ii,1) concSort(end) ].*normalFitL(2,i) + normalFitL(1,i), 'b-');
+                    plot([ crossL(i,ii,1) concSort(end) ], [ crossL(i,ii,1) concSort(end) ].*normalFitL(2,ii) + normalFitL(1,ii), 'b-');
 					fresL(rpos) = -crossL(i,ii,1);
 					plot(crossL(i,ii,1),crossL(i,ii,2),'bx','MarkerSize',20);
 				else
@@ -252,6 +256,7 @@ function [ fres, correlation, calibration, fitRange, calibrationLines ] = SlopeS
 				if ( prop > (1+slopeDiffRequired) || prop < (1-slopeDiffRequired) )
 					crossR(i,ii,:) = pinv([normalFitR(2,i) -1; normalFitR(2,ii) -1]) * [-normalFitR(1,i);-normalFitR(1,ii)];
 					plot([ crossR(i,ii,1) concSort(end) ], [ crossR(i,ii,1) concSort(end) ].*normalFitR(2,i) + normalFitR(1,i), 'r-');
+                    plot([ crossR(i,ii,1) concSort(end) ], [ crossR(i,ii,1) concSort(end) ].*normalFitR(2,ii) + normalFitR(1,ii), 'r-');
 					fresR(rpos) = -crossR(i,ii,1);
 					plot(crossR(i,ii,1),crossR(i,ii,2),'rx','MarkerSize',20);
 				else
@@ -264,9 +269,9 @@ function [ fres, correlation, calibration, fitRange, calibrationLines ] = SlopeS
 		end
     end
     
-    calibrationLines.AVG = normalFitAVG;
-    calibrationLines.L = normalFitL;
-    calibrationLines.R = normalFitR;
+    regressionEquations.AVG = normalFitAVG;
+    regressionEquations.L = normalFitL;
+    regressionEquations.R = normalFitR;
     
     % Here, is a little trick, to remove the intersection points
     % which are too far from average. It is done by the means of
@@ -340,7 +345,7 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 % iterations, so the code is a bit of mixture of different ideas.
 % Some tweakalbe setting:
 %======================================================================
-	fitSize = 7; %How many points should be fitted to get slope%
+	fitSize = 5; %How many points should be fitted to get slope%
 	maxHit = 4;  %How many times the slope has to change to call it inflection point%
 	verbose = true; %Draw some additional plots%
     
