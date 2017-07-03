@@ -1,6 +1,6 @@
-function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DATACELL, peakLocation, options)
+function [ fres, correlation, calibration, fitRange, regressionEquations ] = SlopeStandardAdditionAnalysis(DATACELL, peakLocation, options)
 %
-% standardAdditionSlope(DATACELL, peakLocation, options) is a function which tries
+% SlopeStandardAdditionAnalysis(DATACELL, peakLocation, options) is a function which tries
 % to perform standard addition analysis using peak slope at the inflection points
 % without any background correction. 
 %
@@ -28,7 +28,7 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
 %				be calculated for the curve with highest concentration 
 %				and used for all (as opposed to calculating the
 %				inflection point for all curves independiently.
-%
+
 % Copyright (c) 2016, Filip Ciepiela <filip.ciepiela@agh.edu.pl> 
 % All rights reserved.
 %
@@ -57,24 +57,19 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
 
 % Check input and set some default values (this may be tweaked)
 %==============================================================
+    close all;
     correlationTreshhold = 0.8;
     rowRemoveTresholdPercent = 0.3;
 	slopeDiffRequired = 0.05;
-	try
-		options.average;
-	catch
+	if ( ~isfield(options, 'average') )
 		options.average = false;
 	end
-
-	try 
-		options.smooth;
-	catch
+    
+	if ( ~isfield(options,'smooth') )
 		options.smooth = false;
 	end
 
-	try
-		options.forceSamePoints;
-	catch
+	if ( ~isfield(options, 'forceSamePoints') )
 		options.forceSamePoints = true;
 	end
 
@@ -113,7 +108,7 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
 		dataY = newDataY;
 		conc = newConc;
 		sens = newSens;
-    end
+	end
     
     % sort data by conc, so it is easier to follow the work flow
     %===========================================================
@@ -121,14 +116,15 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
 	sensSort = sens(1,sortOrder);
 	dataYSort = zeros(size(dataY));
 	dataYSort(:,:) = dataY(:,sortOrder);
+    sensSort(:,:) = sens(1,sortOrder);
 
 	if ( options.smooth )
         % smooth is required
         %===================
 		for i=1:size(dataYSort,2)
 			dataYSort(:,i) = smooth(dataYSort(:,i));
-		end
-    end
+        end
+	end
 
     % Very important step -- find the slope of each peak in inflection point. 
     % By default it reuses the point where the slope was taken from the peak
@@ -139,22 +135,24 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
     % rigth, left or average slope in inflection point respectivly.
     % getSlopeInInflection is included in this file.
     %================================================================
+    figure('Name','Plots');
+    lineColors = hsv(length(unique(sens)));
 	for i=size(dataYSort,2):-1:1
 		if ( i == size(dataYSort,2) )
-			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, false);
+			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, false, 0, lineColors(:,sensSort(i)));
 		else
-			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, options.forceSamePoints, fitRange(:,i+1));
+			[slopeL(1,i), slopeR(1,i), slopeAVG(1,i), fitRange(:,i)] = getSlopeInInflection(dataYSort(:,i), peakLocation, options.forceSamePoints, fitRange(:,i+1), lineColors(:,sensSort(i)));
 		end
 	end
 	
 	% It uses Normal Equation to find the optimal fit of calibration plot.
 	%=====================================================================
-	figure;
+	figure('Name', 'Fits');
 	hold on;
 	icons = [ 'o' '+' '*' 's' 'd' 'v' '^' '<' '>' 'p' 'h' ];
 	if ( length(unique(sensSort)) > length(icons) ) 
 		icons(1:length(unique(sensSort))) = 'o';
-	end
+    end
 	for s=unique(sensSort)
 		list = (sensSort == s);
 		% FIT using normal equation:
@@ -173,11 +171,11 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
 		correlation.R(s) = tmp(2,1);
 		tmp = corr( [(concList(:,s) .*normalFitAVG(2,s) + normalFitAVG(1,s)), slopeAVG(1,list)'] );
 		correlation.AVG(s) = tmp(2,1);
-    end
+	end
     
-    calibration.L = slopeL(1,:)
-    calibration.R = slopeR(1,:)
-    calibration.AVG = slopeAVG(1,:)
+    calibration.L = slopeL(1,:);
+    calibration.R = slopeR(1,:);
+    calibration.AVG = slopeAVG(1,:);
 	
     % Generate initial matrix of intercepts
     %======================================
@@ -222,14 +220,17 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
                     %==========================================================
 					crossAVG(i,ii,:) = pinv([normalFitAVG(2,i) -1; normalFitAVG(2,ii) -1]) * [-normalFitAVG(1,i);-normalFitAVG(1,ii)];
 					plot([ crossAVG(i,ii,1) concSort(end) ], [ crossAVG(i,ii,1) concSort(end) ].*normalFitAVG(2,i) + normalFitAVG(1,i), 'g-');
+                    plot([ crossAVG(i,ii,1) concSort(end) ], [ crossAVG(i,ii,1) concSort(end) ].*normalFitAVG(2,ii) + normalFitAVG(1,ii), 'g-');
 					fresAVG(rpos) = -crossAVG(i,ii,1);
 					plot(crossAVG(i,ii,1),crossAVG(i,ii,2),'gx','MarkerSize',20);
 				else
 					disp (['Sens1: ' num2str(normalFitAVG(2,i)) '; Sens2: ' num2str(normalFitAVG(2,ii)) '; Sens1/Sens2:' num2str(normalFitAVG(2,i)/normalFitAVG(2,ii)) ]);
 					disp('Sensitivities are too similar for AVERAGE');
 					avOK = false;
-				end
+                end
+                
             end
+
 			
             % The same as above, but for L
             %=============================
@@ -238,13 +239,14 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
 				if ( prop > (1+slopeDiffRequired) || prop < (1-slopeDiffRequired) )
 					crossL(i,ii,:) = pinv([normalFitL(2,i) -1; normalFitL(2,ii) -1]) * [-normalFitL(1,i);-normalFitL(1,ii)];
 					plot([ crossL(i,ii,1) concSort(end) ], [ crossL(i,ii,1) concSort(end) ].*normalFitL(2,i) + normalFitL(1,i), 'b-');
+                    plot([ crossL(i,ii,1) concSort(end) ], [ crossL(i,ii,1) concSort(end) ].*normalFitL(2,ii) + normalFitL(1,ii), 'b-');
 					fresL(rpos) = -crossL(i,ii,1);
 					plot(crossL(i,ii,1),crossL(i,ii,2),'bx','MarkerSize',20);
 				else
 					disp (['Sens1: ' num2str(normalFitL(2,i)) '; Sens2: ' num2str(normalFitL(2,ii)) '; Sens1/Sens2:' num2str(normalFitL(2,i)/normalFitL(2,ii)) ]);
 					disp('Sensitivities are too similar for LEFT');
 					lOK = false;
-				end
+                end
             end
 			
             % The same as above but for R
@@ -254,20 +256,24 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
 				if ( prop > (1+slopeDiffRequired) || prop < (1-slopeDiffRequired) )
 					crossR(i,ii,:) = pinv([normalFitR(2,i) -1; normalFitR(2,ii) -1]) * [-normalFitR(1,i);-normalFitR(1,ii)];
 					plot([ crossR(i,ii,1) concSort(end) ], [ crossR(i,ii,1) concSort(end) ].*normalFitR(2,i) + normalFitR(1,i), 'r-');
+                    plot([ crossR(i,ii,1) concSort(end) ], [ crossR(i,ii,1) concSort(end) ].*normalFitR(2,ii) + normalFitR(1,ii), 'r-');
 					fresR(rpos) = -crossR(i,ii,1);
 					plot(crossR(i,ii,1),crossR(i,ii,2),'rx','MarkerSize',20);
 				else
 					disp (['Sens1: ' num2str(normalFitR(2,i)) '; Sens2: ' num2str(normalFitR(2,ii)) '; Sens1/Sens2:' num2str(normalFitR(2,i)/normalFitR(2,ii)) ]);
 					disp('Sensitivities are too similar for RIGHT');
 					rOK = false;
-				end
-			end
-			
+                end
+            end
 			rpos = rpos+1;
 		end
     end
     
-    % Here, is a little dirty trick, to remove the intersection points
+    regressionEquations.AVG = normalFitAVG;
+    regressionEquations.L = normalFitL;
+    regressionEquations.R = normalFitR;
+    
+    % Here, is a little trick, to remove the intersection points
     % which are too far from average. It is done by the means of
     % Coefficient of Variance value, and can be tweaked in the setting at
     % the beggining of the file.
@@ -309,7 +315,7 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
         disp(correlation.AVG(i));
     end
 	
-    % Here it selects, if it possible to offer the final result, for which
+    % Here it selects, if it is possible to offer the final result, for which
     % set of data, the result is the best (left, right or average)
     %=====================================================================
 	if ( lOK && min(correlation.L) > correlationTreshhold  ...
@@ -334,7 +340,7 @@ function [ fres, correlation, calibration, fitRange ] = standardAdditionSlope(DA
 
 end
 
-function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(signal, peak, forceFitRange, fitRange )
+function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(signal, peak, forceFitRange, fitRange, lineColor )
 % I find this as one of the most important steps, I has gone trou many
 % iterations, so the code is a bit of mixture of different ideas.
 % Some tweakalbe setting:
@@ -531,9 +537,9 @@ function [slopeL, slopeR, slopeAVGfitRange, fitRange] = getSlopeInInflection(sig
 	slopeAVGfitRange = (slopeL - slopeR)/2;
 	
 	if ( verbose )
-		plot(signal); hold on;
-		plot(fitrangeL,signal(fitrangeL),'*b');
-		plot(fitrangeR,signal(fitrangeR),'*g');
+		plot(signal,'Color', lineColor); hold on;
+		plot(fitrangeL,signal(fitrangeL),'*b', 'MarkerSize', 2);
+		plot(fitrangeR,signal(fitrangeR),'*r', 'MarkerSize', 2);
 	end
 	
 end

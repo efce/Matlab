@@ -9,7 +9,7 @@ function [ data ] = prepareStructFromRawData( rawData, concVect, tptotalVal, tpV
 % tpVal - value of tp to be used for callibration (usually low 1-5)
 % twVect - vector of values of tw's to prepare the final calibration set
 %          (eg. [ 5 10 15 20] - provides 4 sets for calibration)
-%technique - voltammetric technique: 'sc' | 'np' | 'dp' | 'sqw'
+% technique - voltammetric technique: 'sc' | 'np' | 'dp' | 'sqw'
 
     if ( numel(concVect) ~= size(rawData,2) ) 
         error('concVect has to describe every column of rawData');
