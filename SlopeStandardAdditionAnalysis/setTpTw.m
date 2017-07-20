@@ -1,4 +1,4 @@
-function [ res ] = setTpTw( sig, realms, tp, tw, type)
+function [ res, partial1, partial2 ] = setTpTw( sig, realms, tp, tw, type)
 % setTpTw is simple function to process RAW data form electrochemical
 % analyzer. I can process data from SCV, DPV and NPV techniques.
 % sig - signal with raw data (readout from A/D converter)
@@ -17,13 +17,19 @@ function [ res ] = setTpTw( sig, realms, tp, tw, type)
 
     if (strcmp(type,'sc'))
         res=tres;
+        res=partial1;
+        res=partial2;
     elseif (strcmp(type,'dp') || strcmp(type,'np') || strcmp(type,'dpasv') || strcmp(type,'npasv') )
         for (i=1:2:length(tres)-1) 
             res(floor(i/2)+1) = tres(i+1)-tres(i);
+            partial1(floor(i/2)+1) = tres(i);
+            partial2(floor(i/2)+1) = tres(i+1);
         end;
     elseif strcmp(type,'sqw')
         for (i=2:2:length(tres)-1)
             res(floor(i/2)+1) = tres(i)-tres(i+1);
+            partial1(floor(i/2)+1) = tres(i);
+            partial2(floor(i/2)+1) = tres(i+1);
         end;        
     end
 end
