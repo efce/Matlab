@@ -11,7 +11,7 @@ function [ res, partial1, partial2 ] = setTpTw( sig, realms, tp, tw, type)
         return;
     end
 
-    for (i=1:realms:size(sig,1)-realms) 
+    for (i=1:realms:size(sig,1)) 
         tres( ((i+realms-1)/realms) ) = sum(sig(i+tw:i+tw+tp-1))/tp;
     end;
 
