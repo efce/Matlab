@@ -24,6 +24,5 @@ function [ data ] = prepareStructFromRawData( rawData, concVect, tptotalVal, tpV
             pos=pos+1;
         end
     end
-
 end
 
